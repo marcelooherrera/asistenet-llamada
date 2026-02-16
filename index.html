@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#2D5016">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Asistente Llamadas">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <title>Asistente de Llamadas</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --primary: #2D5016;
+            --primary-light: #4A7C2B;
+            --secondary: #F4A261;
+            --bg: #FAF9F6;
+            --text: #1A1A1A;
+            --success: #52B788;
+            --error: #E63946;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, var(--bg) 0%, #E8E5DC 100%);
+            min-height: 100vh;
+            color: var(--text);
+            overflow-x: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+        }
+
+        .app-container {
+            height: 100%;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            padding-bottom: 60px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-top: 20px;
+        }
+
+        .header h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .mic-button {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            font-size: 5rem;
+            cursor: pointer;
+            margin: 0 auto 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 
+                0 12px 40px rgba(45, 80, 22, 0.3),
+                inset 0 -4px 12px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            touch-action: manipulation;
+        }
+
+        .mic-button:active {
+            transform: scale(0.92);
+        }
+
+        .mic-button.listening {
+            animation: pulse 1.5s infinite;
+            background: linear-gradient(135deg, var(--error) 0%, #D62839 100%);
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow: 
+                    0 12px 40px rgba(230, 57, 70, 0.3),
+                    0 0 0 0 rgba(230, 57, 70, 0.4);
+            }
+            50% {
+                box-shadow: 
+                    0 12px 40px rgba(230, 57, 70, 0.3),
+                    0 0 0 30px rgba(230, 57, 70, 0);
+            }
+        }
+
+        .status {
+            text-align: center;
+            padding: 24px;
+            background: linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%);
+            border-radius: 20px;
+            margin-bottom: 32px;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .status-text {
+            font-size: 1.6rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .status-detail {
+            font-size: 1.2rem;
+            color: #666;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 16px;
+            border: none;
+            background: white;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            touch-action: manipulation;
+        }
+
+        .tab.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 12px rgba(45, 80, 22, 0.2);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .contacts-section h2 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .contact-list {
+            display: grid;
+            gap: 16px;
+        }
+
+        .contact-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 24px;
+            background: white;
+            border: 3px solid var(--primary);
+            border-radius: 16px;
+            transition: all 0.2s;
+            touch-action: manipulation;
+        }
+
+        .contact-item:active {
+            transform: scale(0.97);
+            background: var(--primary);
+        }
+
+        .contact-item:active .contact-name,
+        .contact-item:active .contact-phone {
+            color: white;
+        }
+
+        .contact-info {
+            flex: 1;
+        }
+
+        .contact-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 4px;
+        }
+
+        .contact-phone {
+            font-size: 1.125rem;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .call-button {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: none;
+            background: var(--success);
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(82, 183, 136, 0.3);
+            touch-action: manipulation;
+            flex-shrink: 0;
+        }
+
+        .call-button:active {
+            transform: scale(0.9);
+        }
+
+        .delete-button {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            background: var(--error);
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            margin-left: 12px;
+            touch-action: manipulation;
+            flex-shrink: 0;
+        }
+
+        .delete-button:active {
+            transform: scale(0.9);
+        }
+
+        .add-contact-form {
+            padding: 24px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 18px;
+            font-size: 1.2rem;
+            border: 3px solid #DEE2E6;
+            border-radius: 12px;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .form-button {
+            width: 100%;
+            padding: 20px;
+            font-size: 1.3rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 12px;
+            background: var(--primary);
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            touch-action: manipulation;
+        }
+
+        .form-button:active {
+            transform: scale(0.97);
+        }
+
+        .instructions {
+            margin-top: 24px;
+            padding: 24px;
+            background: linear-gradient(135deg, #FFF8E7 0%, #FFE5B4 100%);
+            border-radius: 16px;
+            border-left: 6px solid var(--secondary);
+        }
+
+        .instructions h3 {
+            font-size: 1.375rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 12px;
+        }
+
+        .instructions ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .instructions li {
+            font-size: 1.125rem;
+            color: #555;
+            margin-bottom: 8px;
+            padding-left: 28px;
+            position: relative;
+            font-weight: 500;
+        }
+
+        .instructions li::before {
+            content: "▶";
+            position: absolute;
+            left: 0;
+            color: var(--secondary);
+            font-size: 0.875rem;
+        }
+
+        .install-prompt {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: var(--primary);
+            color: white;
+            padding: 20px;
+            border-radius: 16px;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 8px 24px rgba(45, 80, 22, 0.3);
+            z-index: 1000;
+        }
+
+        .install-prompt.show {
+            display: flex;
+        }
+
+        .install-text {
+            flex: 1;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .install-button {
+            padding: 12px 24px;
+            background: white;
+            color: var(--primary);
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-left: 12px;
+            touch-action: manipulation;
+        }
+
+        .close-install {
+            padding: 8px 12px;
+            background: transparent;
+            color: white;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            margin-left: 12px;
+        }
+
+        @media (max-width: 640px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .mic-button {
+                width: 160px;
+                height: 160px;
+                font-size: 4rem;
+            }
+
+            .status-text {
+                font-size: 1.4rem;
+            }
+
+            .status-detail {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="container">
+            <div class="header">
+                <h1>📞 Asistente de Llamadas</h1>
+                <p>Control por Voz</p>
+            </div>
+
+            <button class="mic-button" id="micButton" aria-label="Presiona para hablar">
+                🎤
+            </button>
+
+            <div class="status">
+                <div class="status-text" id="statusText">Presiona el botón para hablar</div>
+                <div class="status-detail" id="statusDetail">Di "Llamar a" seguido del nombre</div>
+            </div>
+
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('contacts')">📋 Contactos</button>
+                <button class="tab" onclick="switchTab('add')">➕ Agregar</button>
+                <button class="tab" onclick="switchTab('help')">💡 Ayuda</button>
+            </div>
+
+            <div id="contactsTab" class="tab-content active">
+                <div class="contact-list" id="contactList"></div>
+            </div>
+
+            <div id="addTab" class="tab-content">
+                <div class="add-contact-form">
+                    <div class="form-group">
+                        <label for="contactName">Nombre</label>
+                        <input type="text" id="contactName" placeholder="Ej: Mamá, Doctor, María">
+                    </div>
+                    <div class="form-group">
+                        <label for="contactPhone">Teléfono</label>
+                        <input type="tel" id="contactPhone" placeholder="Ej: +54 9 11 1234-5678">
+                    </div>
+                    <button class="form-button" onclick="addContact()">Agregar Contacto</button>
+                </div>
+            </div>
+
+            <div id="helpTab" class="tab-content">
+                <div class="instructions">
+                    <h3>💡 Cómo usar</h3>
+                    <ul>
+                        <li>Presiona el botón grande del micrófono</li>
+                        <li>Di "Llamar a" seguido del nombre del contacto</li>
+                        <li>La app confirmará antes de llamar</li>
+                        <li>También puedes tocar directamente en un contacto</li>
+                        <li>Para agregar contactos, ve a la pestaña "Agregar"</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="install-prompt" id="installPrompt">
+        <div class="install-text">📲 Instala la app en tu teléfono para acceso rápido</div>
+        <button class="install-button" id="installButton">Instalar</button>
+        <button class="close-install" onclick="closeInstallPrompt()">✕</button>
+    </div>
+
+    <script>
+        // Service Worker registration
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('Service Worker registrado'))
+                .catch(err => console.log('Error al registrar Service Worker', err));
+        }
+
+        // PWA Install prompt
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('installPrompt').classList.add('show');
+        });
+
+        document.getElementById('installButton').addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                deferredPrompt = null;
+                document.getElementById('installPrompt').classList.remove('show');
+            }
+        });
+
+        function closeInstallPrompt() {
+            document.getElementById('installPrompt').classList.remove('show');
+        }
+
+        // Tabs
+        function switchTab(tabName) {
+            const tabs = document.querySelectorAll('.tab');
+            const contents = document.querySelectorAll('.tab-content');
+            
+            tabs.forEach(tab => tab.classList.remove('active'));
+            contents.forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName + 'Tab').classList.add('active');
+        }
+
+        // Voice synthesis
+        const synth = window.speechSynthesis;
+        let recognition;
+        let isListening = false;
+
+        // Load contacts
+        let contacts = JSON.parse(localStorage.getItem('contacts')) || [
+            { name: 'Emergencias', phone: '911' }
+        ];
+
+        function speak(text, callback) {
+            synth.cancel(); // Cancel any ongoing speech
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'es-AR';
+            utterance.rate = 0.9;
+            utterance.pitch = 1;
+            utterance.volume = 1;
+            
+            if (callback) {
+                utterance.onend = callback;
+            }
+            
+            synth.speak(utterance);
+        }
+
+        function updateStatus(text, detail = '') {
+            document.getElementById('statusText').textContent = text;
+            document.getElementById('statusDetail').textContent = detail;
+        }
+
+        function initSpeechRecognition() {
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                recognition.lang = 'es-AR';
+                recognition.continuous = false;
+                recognition.interimResults = false;
+
+                recognition.onstart = function() {
+                    isListening = true;
+                    document.getElementById('micButton').classList.add('listening');
+                    updateStatus('🎤 Escuchando...', 'Di "Llamar a" seguido del nombre');
+                    speak('Escuchando');
+                };
+
+                recognition.onresult = function(event) {
+                    const transcript = event.results[0][0].transcript.toLowerCase();
+                    console.log('Escuchado:', transcript);
+                    updateStatus('Procesando...', transcript);
+                    processCommand(transcript);
+                };
+
+                recognition.onerror = function(event) {
+                    console.error('Error:', event.error);
+                    updateStatus('❌ Error', 'Intenta de nuevo');
+                    speak('No pude escuchar bien, intenta de nuevo');
+                    stopListening();
+                };
+
+                recognition.onend = function() {
+                    stopListening();
+                };
+            } else {
+                updateStatus('❌ No soportado', 'Usa Chrome o Edge');
+                speak('Tu navegador no soporta reconocimiento de voz');
+            }
+        }
+
+        function stopListening() {
+            isListening = false;
+            document.getElementById('micButton').classList.remove('listening');
+        }
+
+        function processCommand(command) {
+            const patterns = [
+                /llamar a (.+)/,
+                /llama a (.+)/,
+                /llamá a (.+)/,
+                /llame a (.+)/
+            ];
+
+            let contactName = null;
+            for (const pattern of patterns) {
+                const match = command.match(pattern);
+                if (match) {
+                    contactName = match[1].trim();
+                    break;
+                }
+            }
+
+            if (contactName) {
+                const contact = contacts.find(c => 
+                    c.name.toLowerCase().includes(contactName) || 
+                    contactName.includes(c.name.toLowerCase())
+                );
+
+                if (contact) {
+                    confirmCall(contact);
+                } else {
+                    updateStatus('❌ Contacto no encontrado', `No encontré a "${contactName}"`);
+                    speak(`No encontré el contacto ${contactName} en tu lista`);
+                }
+            } else {
+                updateStatus('❓ No entendí', 'Di "Llamar a" seguido del nombre');
+                speak('No entendí el comando. Di llamar a seguido del nombre del contacto');
+            }
+        }
+
+        function confirmCall(contact) {
+            updateStatus('📞 Confirmando...', `¿Llamar a ${contact.name}?`);
+            speak(`¿Deseas llamar a ${contact.name}?`, () => {
+                setTimeout(() => {
+                    makeCall(contact);
+                }, 1000);
+            });
+        }
+
+        function makeCall(contact) {
+            updateStatus('📞 Llamando...', contact.name);
+            speak(`Llamando a ${contact.name}`);
+            
+            window.location.href = `tel:${contact.phone}`;
+            
+            setTimeout(() => {
+                updateStatus('✅ Llamada iniciada', contact.name);
+            }, 1000);
+        }
+
+        function addContact() {
+            const name = document.getElementById('contactName').value.trim();
+            const phone = document.getElementById('contactPhone').value.trim();
+
+            if (name && phone) {
+                contacts.push({ name, phone });
+                localStorage.setItem('contacts', JSON.stringify(contacts));
+                renderContacts();
+                
+                document.getElementById('contactName').value = '';
+                document.getElementById('contactPhone').value = '';
+                
+                speak(`Contacto ${name} agregado correctamente`);
+                updateStatus('✅ Contacto agregado', name);
+                
+                switchTab('contacts');
+                document.querySelector('.tab').click();
+            } else {
+                speak('Por favor completa el nombre y teléfono');
+            }
+        }
+
+        function deleteContact(index) {
+            const contact = contacts[index];
+            if (confirm(`¿Eliminar a ${contact.name}?`)) {
+                contacts.splice(index, 1);
+                localStorage.setItem('contacts', JSON.stringify(contacts));
+                renderContacts();
+                speak(`Contacto ${contact.name} eliminado`);
+            }
+        }
+
+        function renderContacts() {
+            const contactList = document.getElementById('contactList');
+            contactList.innerHTML = '';
+
+            if (contacts.length === 0) {
+                contactList.innerHTML = `
+                    <div style="text-align: center; padding: 40px 20px; color: #666;">
+                        <div style="font-size: 3rem; margin-bottom: 16px;">📱</div>
+                        <div style="font-size: 1.2rem; font-weight: 600;">No hay contactos</div>
+                        <div style="font-size: 1rem; margin-top: 8px;">Ve a "Agregar" para crear tu primer contacto</div>
+                    </div>
+                `;
+                return;
+            }
+
+            contacts.forEach((contact, index) => {
+                const contactItem = document.createElement('div');
+                contactItem.className = 'contact-item';
+                contactItem.innerHTML = `
+                    <div class="contact-info">
+                        <div class="contact-name">${contact.name}</div>
+                        <div class="contact-phone">${contact.phone}</div>
+                    </div>
+                    <button class="call-button" onclick="makeCall(contacts[${index}])" aria-label="Llamar a ${contact.name}">
+                        📞
+                    </button>
+                    <button class="delete-button" onclick="deleteContact(${index})" aria-label="Eliminar ${contact.name}">
+                        🗑️
+                    </button>
+                `;
+                contactList.appendChild(contactItem);
+            });
+        }
+
+        document.getElementById('micButton').addEventListener('click', function() {
+            if (!isListening && recognition) {
+                recognition.start();
+            } else if (isListening && recognition) {
+                recognition.stop();
+            }
+        });
+
+        // Initialize
+        initSpeechRecognition();
+        renderContacts();
+
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                speak('Asistente de llamadas listo. Presiona el botón grande para hablar.');
+            }, 500);
+        });
+
+        // Keep screen awake
+        if ('wakeLock' in navigator) {
+            let wakeLock = null;
+            const requestWakeLock = async () => {
+                try {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                } catch (err) {
+                    console.log('Wake Lock error:', err);
+                }
+            };
+            requestWakeLock();
+        }
+    </script>
+</body>
+</html>

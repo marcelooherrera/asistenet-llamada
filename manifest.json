@@ -1,0 +1,27 @@
+{
+  "name": "Asistente de Llamadas por Voz",
+  "short_name": "Asistente Llamadas",
+  "description": "App accesible para realizar llamadas por comando de voz",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#2D5016",
+  "theme_color": "#2D5016",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["accessibility", "utilities"],
+  "lang": "es-AR",
+  "dir": "ltr"
+}
